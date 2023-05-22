@@ -175,7 +175,7 @@ class CyganikChwilczynski(Player):
 
         return decision
 
-    def get_his_my_cards_taken(self, checked: bool, iChecked: bool) -> tuple[int, int]:
+    def get_his_my_cards_taken(self, checked: bool, iChecked: bool) -> int:
         '''
         This function returns the number of my and the opponent's cards taken by the opponent.
         These numbers are calculated based on the stack size and the number of cards on the pile.
@@ -186,25 +186,21 @@ class CyganikChwilczynski(Player):
         '''
 
         if checked and iChecked:
-            his_cards_taken = 2 if self.stack_size >= 3 else 1
             my_cards_taken = 1 if self.stack_size >= 2 else 0
         elif checked and not iChecked:
             my_cards_taken = 2 if self.stack_size >= 3 else 1
-            his_cards_taken = 1 if self.stack_size >= 2 else 0
         else:
             my_cards_taken = 0
-            his_cards_taken = 0
-        if self.stack_size == 0:
+        if self.stack_size == 0 or len(self.my_cards_on_pile):
             my_cards_taken = 0
-            his_cards_taken = 0
-        if len(self.my_cards_on_pile) == 0:
-            my_cards_taken = 0
-        return his_cards_taken, my_cards_taken
-    
+
+        return my_cards_taken
+
     def update_stack_on_my_check(self, noTakenCards: int) -> None:
         '''
         This function is called after my check. It updates the stack size.
         '''
+
         # As he firstly puts I need to increase the stack size
         self.stack_size += 1
         # As he takes cards I need to decrease the stack size
@@ -214,6 +210,7 @@ class CyganikChwilczynski(Player):
         '''
         This function is called after the check. It updates the information about my cards on the pile.
         '''
+
         self.my_cards_on_pile = self.my_cards_on_pile[:-my_cards_taken]
 
     def getCheckFeedback(self, checked: bool, iChecked: bool, iDrewCards: bool, revealedCard: tuple[int, int], noTakenCards: int, log=False) -> None:
@@ -221,7 +218,11 @@ class CyganikChwilczynski(Player):
         This function is called after the check. It updates the information about the opponent's cards.
         I use it to count important statistics.
         '''
-        his_cards_taken, my_cards_taken = self.get_his_my_cards_taken(
+
+        super().getCheckFeedback(checked, iChecked, iDrewCards,
+                                 revealedCard, noTakenCards, log)
+
+        my_cards_taken = self.get_his_my_cards_taken(
             checked, iChecked)
 
         # I checked correctly
@@ -237,7 +238,7 @@ class CyganikChwilczynski(Player):
             self.opponent_cards_number += noTakenCards - 1
 
             self.update_my_cards_on_pile(my_cards_taken)
-            
+
             self.check_prob += (1 - self.check_prob) * 0.2
 
         # I checked incorrectly
@@ -260,6 +261,6 @@ class CyganikChwilczynski(Player):
 
             self.known_opponent_cards += self.my_cards_on_pile[my_cards_taken:]
 
-            self.opponent_cards_number += his_cards_taken + my_cards_taken
+            self.opponent_cards_number += noTakenCards
 
             self.update_my_cards_on_pile(my_cards_taken)
