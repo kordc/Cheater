@@ -200,16 +200,33 @@ class CyganikChwilczynski(Player):
         if len(self.my_cards_on_pile) == 0:
             my_cards_taken = 0
         return his_cards_taken, my_cards_taken
+    
+    def update_stack_on_my_check(self, noTakenCards: int) -> None:
+        '''
+        This function is called after my check. It updates the stack size.
+        '''
+        # As he firstly puts I need to increase the stack size
+        self.stack_size += 1
+        # As he takes cards I need to decrease the stack size
+        self.stack_size -= noTakenCards
+
+    def update_my_cards_on_pile(self, my_cards_taken: int) -> None:
+        '''
+        This function is called after the check. It updates the information about my cards on the pile.
+        '''
+        self.my_cards_on_pile = self.my_cards_on_pile[:-my_cards_taken]
 
     def getCheckFeedback(self, checked: bool, iChecked: bool, iDrewCards: bool, revealedCard: tuple[int, int], noTakenCards: int, log=False) -> None:
+        '''
+        This function is called after the check. It updates the information about the opponent's cards.
+        I use it to count important statistics.
+        '''
         his_cards_taken, my_cards_taken = self.get_his_my_cards_taken(
             checked, iChecked)
 
         # I checked correctly
         if checked and revealedCard is not None and iChecked and not iDrewCards:
-            # as he firstly puts
-            self.stack_size += 1
-            self.stack_size -= noTakenCards
+            self.update_stack_on_my_check(noTakenCards)
 
             self.known_opponent_cards.append(revealedCard)
 
@@ -219,17 +236,15 @@ class CyganikChwilczynski(Player):
 
             self.opponent_cards_number += noTakenCards - 1
 
-            self.my_cards_on_pile = self.my_cards_on_pile[:-my_cards_taken]
+            self.update_my_cards_on_pile(my_cards_taken)
             
             self.check_prob += (1 - self.check_prob) * 0.2
 
         # I checked incorrectly
         if checked and iChecked and iDrewCards:
-            # as he firstly puts
-            self.stack_size += 1
-            self.stack_size -= noTakenCards
+            self.update_stack_on_my_check(noTakenCards)
 
-            self.my_cards_on_pile = self.my_cards_on_pile[:-my_cards_taken]
+            self.update_my_cards_on_pile(my_cards_taken)
 
             self.check_prob -= (1 - self.check_prob) * 0.9
 
@@ -237,15 +252,14 @@ class CyganikChwilczynski(Player):
         if checked and not iChecked and iDrewCards:
             self.stack_size -= noTakenCards
 
-            self.my_cards_on_pile = self.my_cards_on_pile[:-my_cards_taken]
+            self.update_my_cards_on_pile(my_cards_taken)
 
         # he checked incorrectly
         if checked and not iChecked and not iDrewCards:
+            self.stack_size -= noTakenCards
+
             self.known_opponent_cards += self.my_cards_on_pile[my_cards_taken:]
 
-            # assert noTakenCards == his_cards_taken + my_cards_taken
             self.opponent_cards_number += his_cards_taken + my_cards_taken
 
-            self.my_cards_on_pile = self.my_cards_on_pile[:-my_cards_taken]
-
-            self.stack_size -= noTakenCards
+            self.update_my_cards_on_pile(my_cards_taken)
