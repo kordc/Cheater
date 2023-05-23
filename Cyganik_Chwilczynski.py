@@ -9,7 +9,6 @@ class CyganikChwilczynski(Player):
         super().__init__(name)
 
         self.game_started = False
-        self.I_checked = False
 
         self.whole_deck = [(number, color) for color in range(4)
                            for number in range(9, 15)]
@@ -129,7 +128,7 @@ class CyganikChwilczynski(Player):
             card_to_lie = self.card_to_lie(declared_card)
             if card_to_lie is not None:
                 decision = self.play_card(
-                    card, self.card_to_lie(declared_card))
+                    self.cards[0], card_to_lie)
 
         # If there's no choice made I'll just draw
         if decision is None:
@@ -142,10 +141,6 @@ class CyganikChwilczynski(Player):
 
         return decision
 
-    def make_check_decision(self, decision: bool) -> bool:
-        self.I_checked = decision
-        return decision
-
     def checkCard(self, opponent_declaration: tuple[int, int] | None) -> bool:
         '''
         This function is called when the player has to check the card.
@@ -154,16 +149,16 @@ class CyganikChwilczynski(Player):
 
         # If the opponent declared None I'm not checking
         if opponent_declaration is None:
-            decision = self.make_check_decision(False)
+            decision = False
         # If the opponent declared a card I'm sure it's on pile I'm checking it
         elif opponent_declaration in self.my_cards_on_pile:
-            decision = self.make_check_decision(True)
+            decision = True
         # If the opponent declared a card which belongs to me I'm checking it
         elif opponent_declaration in self.cards:
-            decision = self.make_check_decision(True)
+            decision = True
         # If I know he has it, I don't want to check it
         elif opponent_declaration in self.known_opponent_cards:
-            decision = self.make_check_decision(False)
+            decision = False
         # If I don't know anything about the card I'm checking it with very low probability
         else:
             random_number = np.random.rand()
@@ -172,7 +167,8 @@ class CyganikChwilczynski(Player):
             else:
                 decision = False
 
-            self.I_checked = decision
+        if self.putCard(opponent_declaration) == "draw":
+            decision = True
 
         return decision
 
